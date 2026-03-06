@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import AddToShelfModal from '@/components/AddToShelfModal'
 import type { ProductInput } from '@/lib/types'
-import { normalizeProduct, type CredoRawProduct } from '@/lib/credo'
+import { normalizeProduct, normalizeShopifyProduct, type CredoRawProduct, type CredoProduct } from '@/lib/credo'
 
 // ─── Open Beauty Facts ────────────────────────────────────────────────────────
 
@@ -86,6 +86,31 @@ async function searchCredo(q: string): Promise<ProductInput[]> {
     .map(credoToProductInput)
 }
 
+// ─── Glossier ─────────────────────────────────────────────────────────────────
+
+async function searchGlossier(q: string): Promise<ProductInput[]> {
+  const ql = q.toLowerCase()
+  const pages = await Promise.all(
+    [1, 2].map((page) =>
+      fetch(
+        `https://glossier.com/products.json?limit=250&page=${page}`,
+        { headers: { Accept: 'application/json' } }
+      )
+        .then((r) => (r.ok ? r.json() : { products: [] }))
+        .then((d) => (d.products ?? []) as CredoRawProduct[])
+        .catch(() => [] as CredoRawProduct[])
+    )
+  )
+  return pages
+    .flat()
+    .map((raw) => normalizeShopifyProduct(raw, 'https://glossier.com', 'glossier'))
+    .filter((p) => {
+      const haystack = [p.name, p.brand, ...(p.tags ?? [])].join(' ').toLowerCase()
+      return haystack.includes(ql)
+    })
+    .map(credoToProductInput)
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function SearchPage() {
@@ -95,6 +120,8 @@ export default function SearchPage() {
   const [searched, setSearched] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<ProductInput | null>(null)
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set())
+  const [addedCount, setAddedCount] = useState(0)
+  const [showToast, setShowToast] = useState(false)
 
   const search = useCallback(async (q: string) => {
     if (!q.trim()) return
@@ -103,14 +130,12 @@ export default function SearchPage() {
     setResults([])
 
     try {
-      // Try Credo first; fall back to Open Beauty Facts if no results
+      // Credo → Glossier → Open Beauty Facts
       const credo = await searchCredo(q)
-      if (credo.length > 0) {
-        setResults(credo)
-      } else {
-        const obf = await searchOBF(q)
-        setResults(obf)
-      }
+      if (credo.length > 0) { setResults(credo); return }
+      const glossier = await searchGlossier(q)
+      if (glossier.length > 0) { setResults(glossier); return }
+      setResults(await searchOBF(q))
     } catch {
       setResults([])
     } finally {
@@ -122,11 +147,29 @@ export default function SearchPage() {
     if (e.key === 'Enter') search(query)
   }
 
+  function handleAdded(id: string) {
+    setAddedIds((prev) => new Set([...prev, id]))
+    setAddedCount((n) => n + 1)
+    setShowToast(true)
+    setTimeout(() => setShowToast(false), 4000)
+  }
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-stone-900 mb-1">Find products</h1>
-        <p className="text-stone-500 text-sm">Search our beauty database</p>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-stone-900 mb-0.5">Find products</h1>
+          <p className="text-stone-400 text-sm">Search our beauty database</p>
+        </div>
+        {addedCount > 0 && (
+          <Link
+            href="/shelf"
+            className="text-sm px-4 py-2 border border-stone-200 text-stone-700 hover:border-stone-400 transition-colors"
+          >
+            View shelf ({addedCount} added)
+          </Link>
+        )}
       </div>
 
       {/* Search bar */}
@@ -210,14 +253,14 @@ export default function SearchPage() {
                     </p>
 
                     <button
-                      onClick={() => setSelectedProduct(product)}
+                      onClick={() => !added && setSelectedProduct(product)}
                       disabled={added}
                       className={`mt-3 w-full py-1.5 text-xs font-medium transition-colors ${
                         added ? 'bg-stone-100 text-stone-400 cursor-default' : 'text-white hover:opacity-90'
                       }`}
                       style={added ? undefined : { background: '#F01672' }}
                     >
-                      {added ? 'Added' : '+ Add to shelf'}
+                      {added ? '✓ Added' : '+ Add to shelf'}
                     </button>
                   </div>
                 </div>
@@ -241,11 +284,23 @@ export default function SearchPage() {
           product={selectedProduct}
           onClose={() => setSelectedProduct(null)}
           onSuccess={() => {
-            const id = selectedProduct.externalId ?? selectedProduct.name
-            setAddedIds((prev) => new Set([...prev, id]))
+            handleAdded(selectedProduct.externalId ?? selectedProduct.name)
           }}
         />
       )}
+
+      {/* Toast */}
+      <div
+        className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300"
+        style={{ opacity: showToast ? 1 : 0, pointerEvents: showToast ? 'auto' : 'none', transform: `translateX(-50%) translateY(${showToast ? '0' : '12px'})` }}
+      >
+        <div className="flex items-center gap-4 bg-stone-900 text-white text-sm px-5 py-3 shadow-lg whitespace-nowrap">
+          <span>Added to your shelf</span>
+          <Link href="/shelf" className="underline underline-offset-2 font-medium hover:opacity-80 transition-opacity">
+            View shelf →
+          </Link>
+        </div>
+      </div>
     </div>
   )
 }
