@@ -24,7 +24,11 @@ export const GLASS_SHELF: React.CSSProperties = {
   boxShadow: '0 8px 22px rgba(0,0,0,0.14), 0 2px 4px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.9)',
 }
 
-export function ProductBottle({ item, onClick }: { item: ShelfItem; onClick: () => void }) {
+export function ProductBottle({ item, onClick, onQuickMove }: {
+  item: ShelfItem
+  onClick: () => void
+  onQuickMove?: (item: ShelfItem) => void
+}) {
   return (
     <button
       onClick={onClick}
@@ -56,11 +60,19 @@ export function ProductBottle({ item, onClick }: { item: ShelfItem; onClick: () 
       </div>
 
       {/* Tooltip */}
-      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 whitespace-nowrap">
-        <div className="bg-stone-900/90 text-white text-[10px] px-2 py-1 rounded max-w-[140px]">
+      <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 whitespace-nowrap ${onQuickMove ? '' : 'pointer-events-none'}`}>
+        <div className="bg-stone-900/90 text-white text-[10px] px-2 py-1 rounded max-w-[160px]">
           <p className="truncate">{item.product?.name}</p>
           {item.variant_titles?.length > 0 && (
             <p className="truncate opacity-70">{item.variant_titles.join(', ')}</p>
+          )}
+          {onQuickMove && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onQuickMove(item) }}
+              className="mt-1 pt-1 w-full text-left border-t border-white/20 opacity-60 hover:opacity-100 transition-opacity"
+            >
+              → Move to {item.status === 'using' ? 'wishlist' : 'shelf'}
+            </button>
           )}
         </div>
         <div className="w-2 h-2 bg-stone-900/90 rotate-45 mx-auto -mt-1" />
@@ -72,11 +84,13 @@ export function ProductBottle({ item, onClick }: { item: ShelfItem; onClick: () 
 export default function ShelfCabinet({
   items,
   onProductClick,
+  onQuickMove,
   variant = 'shelf',
   emptyMessage,
 }: {
   items: ShelfItem[]
   onProductClick: (item: ShelfItem) => void
+  onQuickMove?: (item: ShelfItem) => void
   variant?: 'shelf' | 'wishlist'
   emptyMessage?: string
 }) {
@@ -99,7 +113,7 @@ export default function ShelfCabinet({
           <div key={i}>
             <div className="flex items-end gap-4 px-5 pt-7 min-h-[116px]">
               {shelfItems.map((item) => (
-                <ProductBottle key={item.id} item={item} onClick={() => onProductClick(item)} />
+                <ProductBottle key={item.id} item={item} onClick={() => onProductClick(item)} onQuickMove={onQuickMove} />
               ))}
               {shelfItems.length === 0 && i === 0 && items.length === 0 && (
                 <div className="flex items-end pb-3 w-full">

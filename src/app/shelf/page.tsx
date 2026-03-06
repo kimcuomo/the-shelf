@@ -223,6 +223,16 @@ export default function ShelfPage() {
     setItems((prev) => prev.filter((i) => i.id !== selected.id))
   }
 
+  async function handleQuickMove(item: ShelfItem) {
+    const newStatus = item.status === 'using' ? 'wishlist' : 'using'
+    setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, status: newStatus } : i))
+    await fetch('/api/shelf', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: item.id, status: newStatus, rating: item.rating, notes: item.notes, variant_titles: item.variant_titles }),
+    })
+  }
+
   const shelfItems = items.filter((i) => i.status === 'using')
   const wishlistItems = items.filter((i) => i.status === 'wishlist')
 
@@ -271,9 +281,9 @@ export default function ShelfPage() {
         <div className="flex justify-center">
           <div style={{ width: '280px' }}>
             {activeTab === 'shelf' ? (
-              <ShelfCabinet items={shelfItems} onProductClick={setSelected} variant="shelf" emptyMessage="Your shelf is empty" />
+              <ShelfCabinet items={shelfItems} onProductClick={setSelected} onQuickMove={handleQuickMove} variant="shelf" emptyMessage="Your shelf is empty" />
             ) : (
-              <ShelfCabinet items={wishlistItems} onProductClick={setSelected} variant="wishlist" emptyMessage="Nothing on your wishlist yet" />
+              <ShelfCabinet items={wishlistItems} onProductClick={setSelected} onQuickMove={handleQuickMove} variant="wishlist" emptyMessage="Nothing on your wishlist yet" />
             )}
           </div>
         </div>
