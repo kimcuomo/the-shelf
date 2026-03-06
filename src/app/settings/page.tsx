@@ -10,6 +10,7 @@ export default function SettingsPage() {
   const [profile, setProfile] = useState<Profile | null>(null)
   const [bio, setBio] = useState('')
   const [isPrivate, setIsPrivate] = useState(false)
+  const [wishlistPrivate, setWishlistPrivate] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -29,6 +30,7 @@ export default function SettingsPage() {
         setProfile(data)
         setBio(data.bio ?? '')
         setIsPrivate(data.is_private ?? false)
+        setWishlistPrivate(data.wishlist_private ?? false)
       }
     }
     load()
@@ -42,7 +44,7 @@ export default function SettingsPage() {
     const supabase = createClient()
     await supabase
       .from('profiles')
-      .update({ bio: bio.trim() || null, is_private: isPrivate })
+      .update({ bio: bio.trim() || null, is_private: isPrivate, wishlist_private: wishlistPrivate })
       .eq('id', profile.id)
 
     setSaving(false)
@@ -89,13 +91,32 @@ export default function SettingsPage() {
           <button
             type="button"
             onClick={() => setIsPrivate(!isPrivate)}
-            className={`relative flex-shrink-0 w-10 h-5 rounded-full transition-colors ${isPrivate ? '' : 'bg-stone-200'}`}
+            className={`relative flex-shrink-0 w-10 h-5 rounded-full overflow-hidden transition-colors ${isPrivate ? '' : 'bg-stone-200'}`}
             style={isPrivate ? { background: '#F01672' } : undefined}
             aria-checked={isPrivate}
             role="switch"
           >
             <span
               className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${isPrivate ? 'translate-x-5' : 'translate-x-0.5'}`}
+            />
+          </button>
+        </div>
+
+        <div className="flex items-start justify-between gap-4 py-3 border-t border-stone-100">
+          <div>
+            <p className="text-sm font-medium text-stone-700">Private wishlist</p>
+            <p className="text-xs text-stone-400 mt-0.5">Hide your wishlist from your public profile</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setWishlistPrivate(!wishlistPrivate)}
+            className={`relative flex-shrink-0 w-10 h-5 rounded-full overflow-hidden transition-colors ${wishlistPrivate ? '' : 'bg-stone-200'}`}
+            style={wishlistPrivate ? { background: '#F01672' } : undefined}
+            aria-checked={wishlistPrivate}
+            role="switch"
+          >
+            <span
+              className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${wishlistPrivate ? 'translate-x-5' : 'translate-x-0.5'}`}
             />
           </button>
         </div>

@@ -6,6 +6,7 @@ export type Profile = {
   bio: string | null
   is_admin: boolean
   is_private: boolean
+  wishlist_private: boolean
   created_at: string
 }
 
