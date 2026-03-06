@@ -5,6 +5,7 @@ export type Profile = {
   avatar_url: string | null
   bio: string | null
   is_admin: boolean
+  is_private: boolean
   created_at: string
 }
 
@@ -42,6 +43,30 @@ export type Follow = {
   follower_id: string
   following_id: string
   created_at: string
+}
+
+export type Comment = {
+  id: string
+  shelf_item_id: string
+  user_id: string
+  parent_id: string | null
+  body: string
+  created_at: string
+  author?: Pick<Profile, 'id' | 'username' | 'avatar_url'>
+  replies?: Comment[]
+}
+
+export type Notification = {
+  id: string
+  user_id: string
+  actor_id: string
+  type: 'follow' | 'save' | 'comment' | 'reply'
+  shelf_item_id: string | null
+  comment_id: string | null
+  read_at: string | null
+  created_at: string
+  actor?: Pick<Profile, 'id' | 'username' | 'avatar_url'>
+  shelf_item?: Pick<ShelfItem, 'id'> & { product?: Pick<Product, 'id' | 'name' | 'image_url'> }
 }
 
 // Used when adding a product to shelf (may or may not exist in DB yet)

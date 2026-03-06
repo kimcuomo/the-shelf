@@ -29,19 +29,24 @@ export default async function RootLayout({
   const { data: { user } } = await supabase.auth.getUser();
 
   let profile = null;
+  let unreadCount = 0;
   if (user) {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .maybeSingle();
-    profile = data;
+    const [{ data: profileData }, { count }] = await Promise.all([
+      supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+      supabase
+        .from("notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .is("read_at", null),
+    ]);
+    profile = profileData;
+    unreadCount = count ?? 0;
   }
 
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${feelingPassionate.variable} antialiased`}>
-        <Navbar profile={profile} />
+        <Navbar profile={profile} unreadCount={unreadCount} />
         <main>{children}</main>
       </body>
     </html>

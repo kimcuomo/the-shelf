@@ -91,6 +91,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: shelfError.message }, { status: 500 })
   }
 
+  // Notify the user whose shelf item was saved
+  if (savedFromUserId && savedFromUserId !== user.id) {
+    const { data: savedItem } = await supabase
+      .from('shelf_items')
+      .select('id')
+      .eq('user_id', savedFromUserId)
+      .eq('product_id', productId)
+      .maybeSingle()
+
+    await supabase.from('notifications').insert({
+      user_id: savedFromUserId,
+      actor_id: user.id,
+      type: 'save',
+      shelf_item_id: savedItem?.id ?? null,
+    })
+  }
+
   return NextResponse.json({ success: true })
 }
 

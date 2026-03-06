@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 
 export default function FollowButton({
   profileId,
@@ -15,24 +14,13 @@ export default function FollowButton({
 
   async function toggle() {
     setLoading(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-
-    if (following) {
-      await supabase
-        .from('follows')
-        .delete()
-        .eq('follower_id', user.id)
-        .eq('following_id', profileId)
-      setFollowing(false)
-    } else {
-      await supabase
-        .from('follows')
-        .insert({ follower_id: user.id, following_id: profileId })
-      setFollowing(true)
-    }
-
+    const method = following ? 'DELETE' : 'POST'
+    await fetch('/api/follows', {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ following_id: profileId }),
+    })
+    setFollowing(!following)
     setLoading(false)
   }
 

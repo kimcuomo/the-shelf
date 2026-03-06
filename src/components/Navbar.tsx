@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/lib/types'
 
-export default function Navbar({ profile }: { profile: Profile | null }) {
+export default function Navbar({ profile, unreadCount = 0 }: { profile: Profile | null; unreadCount?: number }) {
   const pathname = usePathname()
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -48,7 +48,23 @@ export default function Navbar({ profile }: { profile: Profile | null }) {
 
           {profile ? (
             <>
+              {navLink('/feed', 'Feed')}
               {navLink('/shelf', 'My Shelf')}
+              {navLink('/people', 'People')}
+              <Link
+                href="/notifications"
+                className={`relative text-sm transition-colors ${
+                  pathname.startsWith('/notifications') ? 'font-medium' : 'text-stone-500 hover:text-stone-800'
+                }`}
+                style={pathname.startsWith('/notifications') ? { color: '#F01672' } : undefined}
+              >
+                Notifications
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-2.5 w-4 h-4 rounded-full text-white text-[10px] flex items-center justify-center font-medium" style={{ background: '#F01672' }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Link>
               <div className="relative">
                 <button
                   onClick={() => setMenuOpen(!menuOpen)}
@@ -72,6 +88,13 @@ export default function Navbar({ profile }: { profile: Profile | null }) {
                         onClick={() => setMenuOpen(false)}
                       >
                         @{profile.username}
+                      </Link>
+                      <Link
+                        href="/settings"
+                        className="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        Settings
                       </Link>
                       {profile.is_admin && (
                         <Link
