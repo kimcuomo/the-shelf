@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/lib/types'
 
@@ -10,6 +10,10 @@ export default function Navbar({ profile, unreadCount = 0 }: { profile: Profile 
   const pathname = usePathname()
   const router = useRouter()
   const [menuOpen, setMenuOpen] = useState(false)
+
+  useEffect(() => {
+    setMenuOpen(false)
+  }, [pathname])
 
   async function handleSignout() {
     const supabase = createClient()
@@ -78,10 +82,10 @@ export default function Navbar({ profile, unreadCount = 0 }: { profile: Profile 
                 {menuOpen && (
                   <>
                     <div
-                      className="fixed inset-0 z-10"
+                      className="fixed inset-0 z-30"
                       onClick={() => setMenuOpen(false)}
                     />
-                    <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-stone-100 py-1 z-20">
+                    <div className="absolute right-0 mt-2 w-44 bg-white rounded-xl shadow-lg border border-stone-100 py-1 z-40">
                       <Link
                         href={`/u/${profile.username}`}
                         className="block px-4 py-2 text-sm text-stone-700 hover:bg-stone-50"
