@@ -1,8 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   reactCompiler: true,
+  images: {
+    remotePatterns: [
+      { protocol: 'https', hostname: 'cdn.shopify.com' },
+      { protocol: 'https', hostname: '**.openbeautyfacts.org' },
+      { protocol: 'https', hostname: 'images.openfoodfacts.org' },
+    ],
+  },
 };
 
 export default nextConfig;
