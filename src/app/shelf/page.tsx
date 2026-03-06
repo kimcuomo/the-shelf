@@ -122,8 +122,15 @@ function ProductDetailModal({
               {(['using', 'wishlist'] as const).map((s) => (
                 <button
                   key={s}
-                  onClick={() => setStatus(s)}
-                  className="flex-1 py-1.5 text-xs border transition-colors"
+                  onClick={async () => {
+                    if (s === status) return
+                    setSaving(true)
+                    await onSave({ status: s, rating, notes: notes.trim() || null })
+                    setSaving(false)
+                    onClose()
+                  }}
+                  disabled={saving}
+                  className="flex-1 py-1.5 text-xs border transition-colors disabled:opacity-50"
                   style={
                     status === s
                       ? { borderColor: '#F01672', background: '#F01672', color: 'white' }
@@ -223,17 +230,7 @@ export default function ShelfPage() {
     setItems((prev) => prev.filter((i) => i.id !== selected.id))
   }
 
-  async function handleQuickMove(item: ShelfItem) {
-    const newStatus = item.status === 'using' ? 'wishlist' : 'using'
-    setItems((prev) => prev.map((i) => i.id === item.id ? { ...i, status: newStatus } : i))
-    await fetch('/api/shelf', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: item.id, status: newStatus, rating: item.rating, notes: item.notes, variant_titles: item.variant_titles }),
-    })
-  }
-
-  const shelfItems = items.filter((i) => i.status === 'using')
+const shelfItems = items.filter((i) => i.status === 'using')
   const wishlistItems = items.filter((i) => i.status === 'wishlist')
 
   return (
@@ -281,9 +278,9 @@ export default function ShelfPage() {
         <div className="flex justify-center">
           <div style={{ width: '280px' }}>
             {activeTab === 'shelf' ? (
-              <ShelfCabinet items={shelfItems} onProductClick={setSelected} onQuickMove={handleQuickMove} variant="shelf" emptyMessage="Your shelf is empty" />
+              <ShelfCabinet items={shelfItems} onProductClick={setSelected} variant="shelf" emptyMessage="Your shelf is empty" />
             ) : (
-              <ShelfCabinet items={wishlistItems} onProductClick={setSelected} onQuickMove={handleQuickMove} variant="wishlist" emptyMessage="Nothing on your wishlist yet" />
+              <ShelfCabinet items={wishlistItems} onProductClick={setSelected} variant="wishlist" emptyMessage="Nothing on your wishlist yet" />
             )}
           </div>
         </div>
